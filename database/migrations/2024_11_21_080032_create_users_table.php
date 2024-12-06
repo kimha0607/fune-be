@@ -19,12 +19,10 @@ class CreateUsersTable extends Migration
             $table->string('name');
             $table->string('phone')->nullable();
             $table->string('address')->nullable();
-            $table->unsignedBigInteger('role_id')->default('1');
+            $table->integer('role_id')->default('1');
             $table->string('password');
             $table->boolean('active')->default(true);
             $table->timestamps();
-
-            $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
         });
     }
 
