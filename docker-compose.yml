@@ -1,0 +1,42 @@
+version: '3.8'
+
+networks:
+  fune-network:
+    driver: bridge
+
+services:
+  db:
+    image: mysql:latest
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: fune_db
+      MYSQL_PASSWORD: 12345678
+      MYSQL_ROOT_PASSWORD: 12345678
+    networks:
+      - fune-network
+    container_name: fune-db
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fune-be
+    ports:
+      - 8000:8000
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: fune_db
+      DB_USERNAME: root
+      DB_PASSWORD: 12345678
+    depends_on:
+      - db
+    networks:
+      - fune-network
