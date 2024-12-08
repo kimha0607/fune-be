@@ -1,42 +1,42 @@
 FROM php:8.2-fpm-alpine
 
 # Set working directory
-ARG workdir=/app
-
+ARG workdir=/var/www
 WORKDIR $workdir
 
 # Install system dependencies
-RUN apk update
 RUN apk add --no-cache \
-  libjpeg-turbo-dev \
-  libpng-dev \
-  libwebp-dev \
-  freetype-dev \
-  libzip-dev \
-  zip \
-  bash \
-  dos2unix
+    libjpeg-turbo-dev \
+    libpng-dev \
+    libwebp-dev \
+    freetype-dev \
+    libzip-dev \
+    zip \
+    bash \
+    dos2unix \
+    oniguruma-dev \
+    curl-dev \
+    tzdata
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo pdo_mysql
-RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
-RUN docker-php-ext-install exif
-RUN docker-php-ext-install zip
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg
-RUN docker-php-ext-install -j$(nproc) gd
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql mysqli exif zip
 
-COPY . /app
+# Copy application code
+COPY . .
 
+# Set correct permissions for storage and cache folders
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
+    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 # Get latest Composer
 COPY --from=composer /usr/bin/composer /usr/bin/composer
 
-RUN composer install
+# Install dependencies using Composer
+RUN composer install --optimize-autoloader --no-dev
 
+# Generate Laravel application key
 RUN php artisan key:generate
 
-# RUN php artisan migrate
-
-CMD ["php", "/app/artisan", "serve", "--host=0.0.0.0", "--port=8000"]
-
-EXPOSE 8000
+# Set default command
+CMD ["php-fpm"]
