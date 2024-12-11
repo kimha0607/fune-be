@@ -27,7 +27,7 @@ class AppointmentController extends Controller
 {
     /**
      * @OA\Get(
-     *     path="/appointments",
+     *     path="/api/appointments",
      *     tags={"Appointments"},
      *     summary="Retrieve a list of appointments",
      *     description="Fetch a paginated list of appointments with optional filters for patient name, doctor name, clinic name, status, and appointment time.",
@@ -150,7 +150,7 @@ class AppointmentController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/appointments",
+     *     path="/api/appointments",
      *     tags={"Appointments"},
      *     summary="Create a new appointment",
      *     description="Schedule a new appointment for a patient with a doctor at a specific clinic.",
@@ -205,7 +205,7 @@ class AppointmentController extends Controller
 
         $clinic = Clinic::findOrFail($validated['clinic_id']);
 
-        $doctor = User::where('id', $validated['doctor_id'])->where('role', 'doctor')->first();
+        $doctor = User::where('id', $validated['doctor_id'])->where('role_id', 2)->first();
 
         if (!$doctor) {
             return response()->json(['error' => 'Invalid doctor'], 400);
