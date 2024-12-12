@@ -162,7 +162,13 @@ class AppointmentController extends Controller
      *             required={"clinic_id", "doctor_id", "appointment_time"},
      *             @OA\Property(property="clinic_id", type="integer", description="ID of the clinic"),
      *             @OA\Property(property="doctor_id", type="integer", description="ID of the doctor"),
-     *             @OA\Property(property="appointment_time", type="string", format="date-time", description="Scheduled time for the appointment")
+     *             @OA\Property(
+ *                      property="appointment_time", 
+ *                      type="string", 
+ *                      format="date-time", 
+ *                      description="Scheduled time for the appointment", 
+ *                      example="2025-1-11 08:45:26"
+ *                  )
      *         )
      *     ),
      *     @OA\Response(

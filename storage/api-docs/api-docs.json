@@ -6,14 +6,14 @@
         "version": "1.0.0"
     },
     "paths": {
-        "/appointments": {
+        "/api/appointments": {
             "get": {
                 "tags": [
                     "Appointments"
                 ],
                 "summary": "Retrieve a list of appointments",
                 "description": "Fetch a paginated list of appointments with optional filters for patient name, doctor name, clinic name, status, and appointment time.",
-                "operationId": "c68dab577f29c04c4422e6cb86fa36ce",
+                "operationId": "09fd012ab97514481bde57bbeac2699b",
                 "parameters": [
                     {
                         "name": "patient_name",
@@ -142,7 +142,7 @@
                 ],
                 "summary": "Create a new appointment",
                 "description": "Schedule a new appointment for a patient with a doctor at a specific clinic.",
-                "operationId": "0cfd7a3482605b745b634d591966d8bf",
+                "operationId": "15017f04a457b26e2a870c8a011a407a",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -165,7 +165,8 @@
                                     "appointment_time": {
                                         "description": "Scheduled time for the appointment",
                                         "type": "string",
-                                        "format": "date-time"
+                                        "format": "date-time",
+                                        "example": "2025-1-11 08:45:26"
                                     }
                                 },
                                 "type": "object"
