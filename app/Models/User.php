@@ -7,7 +7,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
-    protected $fillable = ['email', 'name', 'phone', 'address', 'role', 'password', 'active'];
+    protected $fillable = ['email', 'name', 'phone', 'address', 'role_id', 'password', 'active'];
 
     protected $hidden = ['password'];
 
@@ -30,4 +30,11 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(Appointment::class, 'patient_id');
     }
+
+
+    public function children()
+    {
+        return $this->hasMany(Child::class);
+    }
+
 }

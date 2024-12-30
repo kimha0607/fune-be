@@ -6,14 +6,14 @@
         "version": "1.0.0"
     },
     "paths": {
-        "/appointments": {
+        "/api/appointments": {
             "get": {
                 "tags": [
                     "Appointments"
                 ],
                 "summary": "Retrieve a list of appointments",
                 "description": "Fetch a paginated list of appointments with optional filters for patient name, doctor name, clinic name, status, and appointment time.",
-                "operationId": "c68dab577f29c04c4422e6cb86fa36ce",
+                "operationId": "09fd012ab97514481bde57bbeac2699b",
                 "parameters": [
                     {
                         "name": "patient_name",
@@ -135,66 +135,40 @@
                         "bearerAuth": []
                     }
                 ]
-            },
-            "post": {
+            }
+        },
+        "/api/appointments/{id}": {
+            "get": {
                 "tags": [
                     "Appointments"
                 ],
-                "summary": "Create a new appointment",
-                "description": "Schedule a new appointment for a patient with a doctor at a specific clinic.",
-                "operationId": "0cfd7a3482605b745b634d591966d8bf",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "clinic_id",
-                                    "doctor_id",
-                                    "appointment_time"
-                                ],
-                                "properties": {
-                                    "clinic_id": {
-                                        "description": "ID of the clinic",
-                                        "type": "integer"
-                                    },
-                                    "doctor_id": {
-                                        "description": "ID of the doctor",
-                                        "type": "integer"
-                                    },
-                                    "appointment_time": {
-                                        "description": "Scheduled time for the appointment",
-                                        "type": "string",
-                                        "format": "date-time"
-                                    }
-                                },
-                                "type": "object"
-                            }
+                "summary": "Get details of a specific appointment",
+                "description": "Retrieve detailed information of a specific appointment by its ID.",
+                "operationId": "13b46cd03a1dae29a4c4dd6e756d37da",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the appointment",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     }
-                },
+                ],
                 "responses": {
-                    "201": {
-                        "description": "Appointment created successfully",
+                    "200": {
+                        "description": "Successful response",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Appointment created successfully"
-                                        },
-                                        "appointment": {
-                                            "$ref": "#/components/schemas/Appointment"
-                                        }
-                                    },
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/Appointment"
                                 }
                             }
                         }
                     },
-                    "400": {
-                        "description": "Bad request",
+                    "404": {
+                        "description": "Appointment not found",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -207,21 +181,89 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/appointments/doctor/{doctor_id}": {
+            "get": {
+                "tags": [
+                    "Appointments"
+                ],
+                "summary": "Retrieve appointments for a specific doctor",
+                "description": "Fetch a list of appointments for a specific doctor, with optional filters.",
+                "operationId": "844669ffed598994de3993b688b40608",
+                "parameters": [
+                    {
+                        "name": "doctor_id",
+                        "in": "path",
+                        "description": "ID of the doctor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
                     },
-                    "422": {
-                        "description": "Validation error",
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by appointment status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "completed",
+                                "cancelled"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "start_time",
+                        "in": "query",
+                        "description": "Filter appointments starting from this time",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "end_time",
+                        "in": "query",
+                        "description": "Filter appointments ending at this time",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "errors": {
-                                            "type": "object"
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Appointment"
+                                            }
                                         }
                                     },
                                     "type": "object"
                                 }
                             }
                         }
+                    },
+                    "404": {
+                        "description": "Doctor not found"
                     }
                 },
                 "security": [
@@ -382,6 +424,98 @@
                         }
                     }
                 }
+            }
+        },
+        "/api/children/{userId}": {
+            "get": {
+                "tags": [
+                    "Children Management"
+                ],
+                "summary": "Retrieve all children of a user",
+                "description": "Get a list of all children for a specific user.",
+                "operationId": "1b4664852d2e91914c16d14ff020810d",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "ID of the user whose children are to be retrieved",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "children": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Child"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "User not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/children": {
+            "post": {
+                "tags": [
+                    "Children Management"
+                ],
+                "summary": "Create a new child",
+                "description": "Register a new child under a user.",
+                "operationId": "ef952dd6455c6d115fd0cc3435519b81",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Child"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Child created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Child"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/users": {
@@ -620,6 +754,33 @@
                 },
                 "type": "object"
             },
+            "Child": {
+                "properties": {
+                    "id": {
+                        "description": "Child ID",
+                        "type": "integer"
+                    },
+                    "user_id": {
+                        "description": "User ID of the parent",
+                        "type": "integer"
+                    },
+                    "name": {
+                        "description": "Name of child",
+                        "type": "string"
+                    },
+                    "dob": {
+                        "description": "Date of birth of the child",
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "gender": {
+                        "description": "Gender of the child",
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "User": {
                 "required": [
                     "email",
@@ -663,6 +824,10 @@
         {
             "name": "Authentication",
             "description": "Authentication"
+        },
+        {
+            "name": "Children Management",
+            "description": "Children Management"
         },
         {
             "name": "User Management",

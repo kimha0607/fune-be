@@ -27,7 +27,7 @@ class AppointmentController extends Controller
 {
     /**
      * @OA\Get(
-     *     path="/appointments",
+     *     path="/api/appointments",
      *     tags={"Appointments"},
      *     summary="Retrieve a list of appointments",
      *     description="Fetch a paginated list of appointments with optional filters for patient name, doctor name, clinic name, status, and appointment time.",
@@ -147,10 +147,48 @@ class AppointmentController extends Controller
         return response()->json($appointments);
     }
 
+       /**
+     * @OA\Get(
+     *     path="/api/appointments/{id}",
+     *     tags={"Appointments"},
+     *     summary="Get details of a specific appointment",
+     *     description="Retrieve detailed information of a specific appointment by its ID.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID of the appointment",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response",
+     *         @OA\JsonContent(ref="#/components/schemas/Appointment")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Appointment not found",
+     *         @OA\JsonContent(type="object", @OA\Property(property="error", type="string"))
+     *     )
+     * )
+     */
+
+     public function show($id)
+     {
+         $appointment = Appointment::with(['patient', 'doctor', 'clinic'])->find($id);
+ 
+         if (!$appointment) {
+             return response()->json(['error' => 'Appointment not found'], 404);
+         }
+ 
+         return response()->json($appointment);
+     }
+ 
 
     /**
      * @OA\Post(
-     *     path="/appointments",
+     *     path="/api/appointments",
      *     tags={"Appointments"},
      *     summary="Create a new appointment",
      *     description="Schedule a new appointment for a patient with a doctor at a specific clinic.",
@@ -162,7 +200,13 @@ class AppointmentController extends Controller
      *             required={"clinic_id", "doctor_id", "appointment_time"},
      *             @OA\Property(property="clinic_id", type="integer", description="ID of the clinic"),
      *             @OA\Property(property="doctor_id", type="integer", description="ID of the doctor"),
-     *             @OA\Property(property="appointment_time", type="string", format="date-time", description="Scheduled time for the appointment")
+     *             @OA\Property(
+    *                      property="appointment_time", 
+    *                      type="string", 
+    *                      format="date-time", 
+    *                      description="Scheduled time for the appointment", 
+    *                      example="2025-1-11 08:45:26"
+    *                  )
      *         )
      *     ),
      *     @OA\Response(
@@ -187,6 +231,82 @@ class AppointmentController extends Controller
      * )
      */
 
+
+       /**
+     * @OA\Get(
+     *     path="/api/appointments/doctor/{doctor_id}",
+     *     tags={"Appointments"},
+     *     summary="Retrieve appointments for a specific doctor",
+     *     description="Fetch a list of appointments for a specific doctor, with optional filters.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="doctor_id",
+     *         in="path",
+     *         description="ID of the doctor",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="status",
+     *         in="query",
+     *         description="Filter by appointment status",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"pending", "completed", "cancelled"})
+     *     ),
+     *     @OA\Parameter(
+     *         name="start_time",
+     *         in="query",
+     *         description="Filter appointments starting from this time",
+     *         required=false,
+     *         @OA\Schema(type="string", format="date-time")
+     *     ),
+     *     @OA\Parameter(
+     *         name="end_time",
+     *         in="query",
+     *         description="Filter appointments ending at this time",
+     *         required=false,
+     *         @OA\Schema(type="string", format="date-time")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Appointment"))
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Doctor not found"
+     *     )
+     * )
+     */
+    public function getAppointmentsByDoctor($doctor_id, Request $request)
+    {
+        // Check if the doctor exists
+        $doctor = User::where('id', $doctor_id)->where('role_id', 2)->first();
+
+        if (!$doctor) {
+            return response()->json(['error' => 'Doctor not found'], 404);
+        }
+
+        // Query appointments for the doctor
+        $query = Appointment::where('doctor_id', $doctor_id)->with(['patient', 'clinic']);
+
+        // Apply optional filters
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('start_time') && $request->filled('end_time')) {
+            $query->whereBetween('appointment_time', [$request->start_time, $request->end_time]);
+        }
+
+        $appointments = $query->orderBy('appointment_time', 'asc')->get();
+
+        return response()->json(['data' => $appointments], 200);
+    }
+
     public function store(Request $request)
     {   
         $validator = Validator::make($request->all(), [
@@ -205,7 +325,7 @@ class AppointmentController extends Controller
 
         $clinic = Clinic::findOrFail($validated['clinic_id']);
 
-        $doctor = User::where('id', $validated['doctor_id'])->where('role', 'doctor')->first();
+        $doctor = User::where('id', $validated['doctor_id'])->where('role_id', 2)->first();
 
         if (!$doctor) {
             return response()->json(['error' => 'Invalid doctor'], 400);
