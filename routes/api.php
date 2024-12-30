@@ -1,8 +1,9 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\ChildController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 
 
@@ -33,5 +34,8 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/appointments', [AppointmentController::class, 'store']);
 });
 
-
-
+// Children
+Route::middleware('auth:api')->group(function () {
+    Route::get('/children/{userId}', [ChildController::class, 'index']);
+    Route::post('/children', [ChildController::class, 'store']);
+});

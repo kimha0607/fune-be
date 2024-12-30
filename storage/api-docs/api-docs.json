@@ -426,6 +426,98 @@
                 }
             }
         },
+        "/api/children/{userId}": {
+            "get": {
+                "tags": [
+                    "Children Management"
+                ],
+                "summary": "Retrieve all children of a user",
+                "description": "Get a list of all children for a specific user.",
+                "operationId": "1b4664852d2e91914c16d14ff020810d",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "ID of the user whose children are to be retrieved",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "children": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Child"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "User not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/children": {
+            "post": {
+                "tags": [
+                    "Children Management"
+                ],
+                "summary": "Create a new child",
+                "description": "Register a new child under a user.",
+                "operationId": "ef952dd6455c6d115fd0cc3435519b81",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Child"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Child created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Child"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/users": {
             "get": {
                 "tags": [
@@ -662,6 +754,33 @@
                 },
                 "type": "object"
             },
+            "Child": {
+                "properties": {
+                    "id": {
+                        "description": "Child ID",
+                        "type": "integer"
+                    },
+                    "user_id": {
+                        "description": "User ID of the parent",
+                        "type": "integer"
+                    },
+                    "name": {
+                        "description": "Name of child",
+                        "type": "string"
+                    },
+                    "dob": {
+                        "description": "Date of birth of the child",
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "gender": {
+                        "description": "Gender of the child",
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "User": {
                 "required": [
                     "email",
@@ -705,6 +824,10 @@
         {
             "name": "Authentication",
             "description": "Authentication"
+        },
+        {
+            "name": "Children Management",
+            "description": "Children Management"
         },
         {
             "name": "User Management",
