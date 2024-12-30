@@ -135,67 +135,40 @@
                         "bearerAuth": []
                     }
                 ]
-            },
-            "post": {
+            }
+        },
+        "/api/appointments/{id}": {
+            "get": {
                 "tags": [
                     "Appointments"
                 ],
-                "summary": "Create a new appointment",
-                "description": "Schedule a new appointment for a patient with a doctor at a specific clinic.",
-                "operationId": "15017f04a457b26e2a870c8a011a407a",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "clinic_id",
-                                    "doctor_id",
-                                    "appointment_time"
-                                ],
-                                "properties": {
-                                    "clinic_id": {
-                                        "description": "ID of the clinic",
-                                        "type": "integer"
-                                    },
-                                    "doctor_id": {
-                                        "description": "ID of the doctor",
-                                        "type": "integer"
-                                    },
-                                    "appointment_time": {
-                                        "description": "Scheduled time for the appointment",
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2025-1-11 08:45:26"
-                                    }
-                                },
-                                "type": "object"
-                            }
+                "summary": "Get details of a specific appointment",
+                "description": "Retrieve detailed information of a specific appointment by its ID.",
+                "operationId": "13b46cd03a1dae29a4c4dd6e756d37da",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the appointment",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     }
-                },
+                ],
                 "responses": {
-                    "201": {
-                        "description": "Appointment created successfully",
+                    "200": {
+                        "description": "Successful response",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Appointment created successfully"
-                                        },
-                                        "appointment": {
-                                            "$ref": "#/components/schemas/Appointment"
-                                        }
-                                    },
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/Appointment"
                                 }
                             }
                         }
                     },
-                    "400": {
-                        "description": "Bad request",
+                    "404": {
+                        "description": "Appointment not found",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -208,21 +181,89 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/appointments/doctor/{doctor_id}": {
+            "get": {
+                "tags": [
+                    "Appointments"
+                ],
+                "summary": "Retrieve appointments for a specific doctor",
+                "description": "Fetch a list of appointments for a specific doctor, with optional filters.",
+                "operationId": "844669ffed598994de3993b688b40608",
+                "parameters": [
+                    {
+                        "name": "doctor_id",
+                        "in": "path",
+                        "description": "ID of the doctor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
                     },
-                    "422": {
-                        "description": "Validation error",
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by appointment status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "completed",
+                                "cancelled"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "start_time",
+                        "in": "query",
+                        "description": "Filter appointments starting from this time",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "end_time",
+                        "in": "query",
+                        "description": "Filter appointments ending at this time",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "errors": {
-                                            "type": "object"
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Appointment"
+                                            }
                                         }
                                     },
                                     "type": "object"
                                 }
                             }
                         }
+                    },
+                    "404": {
+                        "description": "Doctor not found"
                     }
                 },
                 "security": [
