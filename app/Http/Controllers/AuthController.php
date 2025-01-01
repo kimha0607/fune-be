@@ -1,8 +1,8 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Helpers\ResponseHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -65,7 +65,26 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            $errors = [];
+    
+            foreach ($validator->errors()->toArray() as $field => $messages) {
+                foreach ($messages as $message) {
+                    if ($field == 'email' && $message == 'The email has already been taken.') {
+                        $errors[] = [
+                            'code' => 'E001',
+                            'field' => 'email',
+                        ];
+                    } else {
+                        $errors[] = [
+                            'code' => 'E999',
+                            'message' => $message,
+                            'field' => $field,
+                        ];
+                    }
+                }
+            }
+    
+            return ResponseHelper::error('Validation error', $errors, 422);
         }
 
         $user = User::create([
@@ -78,10 +97,10 @@ class AuthController extends Controller
             'active' => true,
         ]);
 
-        return response()->json(['message' => 'User registered successfully', 'user' => $user], 201);
+        return ResponseHelper::success(['user' => $user], 'User registered successfully', 201);
     }
 
-        /**
+    /**
      * @OA\Post(
      *     path="/api/login",
      *     summary="Login a user and return a token",
@@ -116,9 +135,11 @@ class AuthController extends Controller
         $credentials = $request->only('email', 'password');
 
         if (!$token = JWTAuth::attempt($credentials)) {
-            return response()->json(['error' => 'Invalid credentials'], 401);
+            return ResponseHelper::customError('Invalid credentials', [
+                'password' => ['E002'],
+            ], 401);
         }
 
-        return response()->json(['token' => $token]);
+        return ResponseHelper::success(['token' => $token], 'Login successful', 200);
     }
 }
