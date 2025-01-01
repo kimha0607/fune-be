@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Helpers\ResponseHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -26,7 +27,7 @@ class UserController extends Controller
 {
     /**
     * @OA\Get(
-    *     path="/users",
+    *     path="/api/users",
     *     tags={"User Management"},
     *     summary="Retrieve all users",
     *     description="Get a list of all users.",
@@ -51,9 +52,41 @@ class UserController extends Controller
         return response()->json(['users' => $users]);
     }
 
+     /**
+     * @OA\Get(
+     *     path="/api/users/info",
+     *     tags={"User Management"},
+     *     summary="Retrieve user info based on token",
+     *     description="Returns the authenticated user's information.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="User info retrieved successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/User")
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized"
+     *     )
+     * )
+     */
+
+    public function getUserInfo(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return ResponseHelper::customError('Invalid credentials', [
+                'token' => ['E999'],
+            ], 403);
+        }
+
+        return ResponseHelper::success($user, 'Get user successful', 201);
+    } 
+
     /**
      * @OA\Get(
-     *     path="/users/{id}",
+     *     path="/api/users/{id}",
      *     tags={"User Management"},
      *     summary="Retrieve a specific user",
      *     description="Returns the details of a specific user by ID.",
@@ -91,7 +124,7 @@ class UserController extends Controller
 
     /**
     * @OA\Post(
-    *     path="/users",
+    *     path="/api/users",
     *     tags={"User Management"},
     *     summary="Create a new user",
     *     description="Register a new user in the system.",
@@ -142,7 +175,7 @@ class UserController extends Controller
 
     /**
     * @OA\Put(
-    *     path="/users/{id}",
+    *     path="/api/users/{id}",
     *     tags={"User Management"},
     *     summary="Update a user",
     *     description="Update an existing user's details.",
@@ -172,41 +205,100 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         $user = User::find($id);
-
+    
         if (!$user) {
             return response()->json(['error' => 'User not found'], 404);
         }
-
+    
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|unique:users,email,' . $id,
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:15',
             'address' => 'nullable|string',
-            'role_id' => 'required|string',
-            'password' => 'nullable|string|min:6',
-            'active' => 'required|boolean',
+            'role_id' => 'required|numeric',
+            'active' => 'required|numeric',
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            $errors = [];
+            foreach ($validator->errors()->toArray() as $field => $messages) {
+                foreach ($messages as $message) {
+                    $errors[] = [
+                        'code' => 'E999',
+                        'message' => $message,
+                        'field' => $field,
+                    ];
+                }
+            }
+            return ResponseHelper::error('Validation error', $errors, 422);
         }
-
+    
         $user->update([
-            'email' => $request->email,
             'name' => $request->name,
             'phone' => $request->phone,
             'address' => $request->address,
             'role_id' => $request->role_id,
-            'password' => $request->password ? Hash::make($request->password) : $user->password,
             'active' => $request->active,
         ]);
+        return ResponseHelper::success($user, 'User updated successfully', 201);
+    }
 
-        return response()->json(['message' => 'User updated successfully', 'user' => $user]);
+    /**
+    * @OA\Put(
+    *     path="/api/users/change-password",
+    *     tags={"User Management"},
+    *     summary="Change user password",
+    *     description="Change the password of the authenticated user.",
+    *     security={{"bearerAuth": {}}},
+    *     @OA\RequestBody(
+    *         required=true,
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="current_password", type="string"),
+    *             @OA\Property(property="new_password", type="string")
+    *         )
+    *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Password changed successfully",
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="message", type="string", example="Password changed successfully")
+    *         )
+    *     ),
+    *     @OA\Response(
+    *         response=400,
+    *         description="Invalid input or incorrect current password"
+    *     )
+    * )
+    */
+
+    public function changePassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:6',
+        ]);
+
+        if ($validator->fails()) {
+            return ResponseHelper::customError('Validation error', $validator->errors(), 422);
+        }
+
+        $user = $request->user();
+        
+        
+        if (!Hash::check($request->current_password, $user->password)) {
+            return ResponseHelper::customError('The current password is incorrect', [], 401);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return ResponseHelper::success([], 'Password changed successfully', 200);
     }
 
     /**
     * @OA\Delete(
-    *     path="/users/{id}",
+    *     path="/api/users/{id}",
     *     tags={"User Management"},
     *     summary="Delete a user",
     *     description="Remove a user from the system.",

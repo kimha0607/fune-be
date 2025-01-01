@@ -14,9 +14,11 @@ Route::post('/login', [AuthController::class, 'login']);
 // User
 Route::middleware('auth:api')->group(function () {
     Route::get('/users', [UserController::class, 'index']);
+    Route::get('/users/info', [UserController::class, 'getUserInfo']);
     Route::get('/users/{id}', [UserController::class, 'show']);
     Route::post('/users', [UserController::class, 'store']);
-    Route::put('/users/{id}', [UserController::class, 'update']);
+    Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
+    Route::patch('/users/change-password', [UserController::class, 'changePassword'])->name('users.changePassword');
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
 });
 
