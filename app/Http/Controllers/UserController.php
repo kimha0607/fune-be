@@ -46,12 +46,45 @@ class UserController extends Controller
     *     )
     * )
     */
-    public function index()
-    {
-        $users = User::all();
-        return response()->json(['users' => $users]);
+    public function index(Request $request)
+{
+    $query = User::query();
+
+    if ($request->has('email')) {
+        $query->where('email', 'like', '%' . $request->email . '%');
     }
 
+    if ($request->has('name')) {
+        $query->where('name', 'like', '%' . $request->name . '%');
+    }
+
+    if ($request->has('phone')) {
+        $query->where('phone', 'like', '%' . $request->phone . '%');
+    }
+
+    if ($request->has('role_id')) {
+        $query->where('role_id', $request->role_id);
+    }
+
+    if ($request->has('active')) {
+        $query->where('active', filter_var($request->active, FILTER_VALIDATE_BOOLEAN));
+    }
+
+    try {
+        $users = $query->paginate(10);
+
+        return ResponseHelper::success(
+            $users,
+            'Users retrieved successfully'
+        );
+    } catch (\Exception $e) {
+        return ResponseHelper::error(
+            'Failed to retrieve users',
+            ['exception' => $e->getMessage()],
+            500
+        );
+    }
+}
      /**
      * @OA\Get(
      *     path="/api/users/info",

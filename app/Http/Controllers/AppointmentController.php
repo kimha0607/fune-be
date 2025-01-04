@@ -105,47 +105,45 @@ class AppointmentController extends Controller
      * )
      */
 
-    public function index(Request $request)
-    {
-        $query = Appointment::query();
-
-        $query->with(['patient', 'doctor', 'clinic']);
-
-        if ($request->filled('patient_name')) {
-            $query->whereHas('patient', function ($q) use ($request) {
-                $q->where('id', $request->patient_name);
-            });
-        }
-
-        if ($request->filled('doctor_name')) {
-            $query->whereHas('doctor', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->doctor_name . '%');
-            });
-        }
-
-        if ($request->filled('clinic_name')) {
-            $query->whereHas('clinic', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->clinic_name . '%');
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('start_time') && $request->filled('end_time')) {
-            $query->whereBetween('appointment_time', [$request->start_time, $request->end_time]);
-        }
-
-        if ($request->filled('sort_by') && $request->filled('sort_order')) {
-            $query->orderBy($request->sort_by, $request->sort_order);
-        } else {
-            $query->orderBy('appointment_time', 'asc');
-        }
-
-        $appointments = $query->paginate(10);
-
-        return ResponseHelper::success($appointments);
+     public function index(Request $request)
+     {
+         $query = Appointment::query();
+     
+         $query->with([
+             'patient.children',
+             'doctor',
+             'clinic'
+         ]);
+     
+         if ($request->filled('patient_id')) {
+             $query->where('patient_id', $request->patient_id);
+         }
+     
+         if ($request->filled('doctor_id')) {
+             $query->where('doctor_id', $request->doctor_id);
+         }
+     
+         if ($request->filled('clinic_id')) {
+             $query->where('clinic_id', $request->clinic_id);
+         }
+     
+         if ($request->filled('status')) {
+             $query->where('status', $request->status);
+         }
+     
+         if ($request->filled('start_time') && $request->filled('end_time')) {
+             $query->whereBetween('appointment_time', [$request->start_time, $request->end_time]);
+         }
+     
+         if ($request->filled('sort_by') && $request->filled('sort_order')) {
+             $query->orderBy($request->sort_by, $request->sort_order);
+         } else {
+             $query->orderBy('appointment_time', 'asc');
+         }
+     
+         $appointments = $query->paginate(10);
+     
+         return ResponseHelper::success($appointments, 'Appointments retrieved successfully');
     }
 
     /**
