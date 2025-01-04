@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Appointment;
@@ -112,7 +113,7 @@ class AppointmentController extends Controller
 
         if ($request->filled('patient_name')) {
             $query->whereHas('patient', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->patient_name . '%');
+                $q->where('id', $request->patient_name);
             });
         }
 
@@ -144,10 +145,10 @@ class AppointmentController extends Controller
 
         $appointments = $query->paginate(10);
 
-        return response()->json($appointments);
+        return ResponseHelper::success($appointments);
     }
 
-       /**
+    /**
      * @OA\Get(
      *     path="/api/appointments/{id}",
      *     tags={"Appointments"},
@@ -174,18 +175,16 @@ class AppointmentController extends Controller
      * )
      */
 
-     public function show($id)
-     {
-         $appointment = Appointment::with(['patient', 'doctor', 'clinic'])->find($id);
- 
-         if (!$appointment) {
-             return response()->json(['error' => 'Appointment not found'], 404);
-         }
- 
-         return response()->json($appointment);
-     }
- 
+    public function show($id)
+    {
+        $appointment = Appointment::with(['patient', 'doctor', 'clinic'])->find($id);
 
+        if (!$appointment) {
+            return ResponseHelper::error('Appointment not found', [], 404);
+        }
+
+        return ResponseHelper::success($appointment);
+    }
 
     /**
      * @OA\Get(
@@ -238,17 +237,14 @@ class AppointmentController extends Controller
      */
     public function getAppointmentsByDoctor($doctor_id, Request $request)
     {
-        // Check if the doctor exists
         $doctor = User::where('id', $doctor_id)->where('role_id', 2)->first();
 
         if (!$doctor) {
-            return response()->json(['error' => 'Doctor not found'], 404);
+            return ResponseHelper::error('Doctor not found', [], 404);
         }
 
-        // Query appointments for the doctor
         $query = Appointment::where('doctor_id', $doctor_id)->with(['patient', 'clinic']);
 
-        // Apply optional filters
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
@@ -259,10 +255,10 @@ class AppointmentController extends Controller
 
         $appointments = $query->orderBy('appointment_time', 'asc')->get();
 
-        return response()->json(['data' => $appointments], 200);
+        return ResponseHelper::success($appointments);
     }
 
-     /**
+    /**
      * @OA\Post(
      *     path="/api/appointments",
      *     tags={"Appointments"},
@@ -274,8 +270,10 @@ class AppointmentController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             required={"clinic_id", "doctor_id", "appointment_time"},
-     *             @OA\Property(property="clinic_id", type="integer", description="ID of the clinic"),
-     *             @OA\Property(property="doctor_id", type="integer", description="ID of the doctor"),
+     *             @OA\Property(property="patient_id", type="integer", description="ID of the patient", example=1),
+     *             @OA\Property(property="doctor_id", type="integer", description="ID of the doctor", example=2),
+     *             @OA\Property(property="clinic_id", type="integer", description="ID of the clinic", example=1),
+     *             @OA\Property(property="dental_issue", type="string", example="caries", description="Dental issue of the appointment"), 
      *             @OA\Property(
     *                      property="appointment_time", 
     *                      type="string", 
@@ -307,42 +305,52 @@ class AppointmentController extends Controller
      * )
      */
 
-    public function store(Request $request)
-    {   
-        $validator = Validator::make($request->all(), [
-            'clinic_id' => 'required|exists:clinics,id',
-            'doctor_id' => 'required|exists:users,id',
-            'appointment_time' => 'required|date|after:now',
-        ]);
+     public function store(Request $request)
+     {
+         $validator = Validator::make($request->all(), [
+             'patient_id' => 'required|exists:users,id',
+             'doctor_id' => 'required|exists:users,id',
+             'clinic_id' => 'required|exists:clinics,id',
+             'dental_issue' => 'required|string',
+             'appointment_time' => 'required|date|after:now',
+         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+         if ($validator->fails()) {
+            $errors = [];
+    
+            foreach ($validator->errors()->toArray() as $field => $messages) {
+                foreach ($messages as $message) {
+                    if ($field == 'appointment_time' && $message == 'The appointment time must be a date after now.') {
+                        $errors[] = [
+                            'code' => 'E003',
+                            'field' => 'appointment_time',
+                        ];
+                    } else {
+                        $errors[] = [
+                            'code' => 'E999',
+                            'message' => $message,
+                            'field' => $field,
+                        ];
+                    }
+                }
+            }
+    
+            return ResponseHelper::error('Validation error', $errors, 422);
         }
-
-        $validated = $validator->validated();
-
-        Log::channel('single')->info('Validation passed:', $validated);
-
-        $clinic = Clinic::findOrFail($validated['clinic_id']);
-
-        $doctor = User::where('id', $validated['doctor_id'])->where('role_id', 2)->first();
-
-        if (!$doctor) {
-            return response()->json(['error' => 'Invalid doctor'], 400);
-        }
-
-        if (!$clinic->doctors->contains($doctor->id)) {
-            return response()->json(['error' => 'Doctor does not work at this clinic'], 400);
-        }
-
-        $appointment = Appointment::create([
-            'patient_id' => auth()->id(),
-            'doctor_id' => $doctor->id,
-            'clinic_id' => $clinic->id,
-            'appointment_time' => $validated['appointment_time'],
-            'status' => 'pending',
-        ]);
-
-        return response()->json(['message' => 'Appointment created successfully', 'appointment' => $appointment], 201);
-    }
+     
+         // Create a new appointment
+         $appointment = Appointment::create([
+             'patient_id' => $request->patient_id,
+             'doctor_id' => $request->doctor_id,
+             'dental_issue' => $request->dental_issue,
+             'clinic_id' => $request->clinic_id,
+             'appointment_time' => $request->appointment_time,
+             'status' => 'pending',
+         ]);
+     
+         return ResponseHelper::success([
+             'message' => 'Appointment created successfully',
+             'appointment' => $appointment,
+         ], 'Appointment created successfully', 201);
+     }
 }

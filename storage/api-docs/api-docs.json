@@ -154,13 +154,22 @@
                                     "appointment_time"
                                 ],
                                 "properties": {
-                                    "clinic_id": {
-                                        "description": "ID of the clinic",
+                                    "patient_id": {
+                                        "description": "ID of the patient",
                                         "type": "integer"
                                     },
                                     "doctor_id": {
                                         "description": "ID of the doctor",
                                         "type": "integer"
+                                    },
+                                    "clinic_id": {
+                                        "description": "ID of the clinic",
+                                        "type": "integer"
+                                    },
+                                    "dental_issue": {
+                                        "description": "Dental issue of the appointment",
+                                        "type": "string",
+                                        "example": "caries"
                                     },
                                     "appointment_time": {
                                         "description": "Scheduled time for the appointment",
@@ -613,14 +622,14 @@
                 ]
             }
         },
-        "/users": {
+        "/api/users": {
             "get": {
                 "tags": [
                     "User Management"
                 ],
                 "summary": "Retrieve all users",
                 "description": "Get a list of all users.",
-                "operationId": "7e2f5799553ec93c9c43e2a58490d447",
+                "operationId": "c457726701591d1183b53aa71fc13441",
                 "responses": {
                     "200": {
                         "description": "Successful response",
@@ -656,7 +665,7 @@
                 ],
                 "summary": "Create a new user",
                 "description": "Register a new user in the system.",
-                "operationId": "a1fce870c566eb5fc0cf3178ec5d2fed",
+                "operationId": "592819a0265360b2014512d6dbfaf0e7",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -689,14 +698,14 @@
                 ]
             }
         },
-        "/users/info": {
+        "/api/users/info": {
             "get": {
                 "tags": [
                     "User Management"
                 ],
                 "summary": "Retrieve user info based on token",
                 "description": "Returns the authenticated user's information.",
-                "operationId": "a8430c2764d56800191eedd4dff08197",
+                "operationId": "97d60b3a8791fc4c7dda8fefc9612aa1",
                 "responses": {
                     "200": {
                         "description": "User info retrieved successfully",
@@ -719,14 +728,14 @@
                 ]
             }
         },
-        "/users/{id}": {
+        "/api/users/{id}": {
             "get": {
                 "tags": [
                     "User Management"
                 ],
                 "summary": "Retrieve a specific user",
                 "description": "Returns the details of a specific user by ID.",
-                "operationId": "910a0c7cf580e1c605648d82a4e57f46",
+                "operationId": "36a33ff774d5cba33c039dec2c3e0287",
                 "parameters": [
                     {
                         "name": "id",
@@ -765,7 +774,7 @@
                 ],
                 "summary": "Update a user",
                 "description": "Update an existing user's details.",
-                "operationId": "ddfe232db1870b82493bf8bd25596d37",
+                "operationId": "b9091397c8b25f12c6adb74be6ce3a5a",
                 "parameters": [
                     {
                         "name": "id",
@@ -814,7 +823,7 @@
                 ],
                 "summary": "Delete a user",
                 "description": "Remove a user from the system.",
-                "operationId": "43dd20becb1f47444e484cbb18ce345c",
+                "operationId": "fa56cffde745d3f152f95cbacd936c0b",
                 "parameters": [
                     {
                         "name": "id",
@@ -841,14 +850,14 @@
                 ]
             }
         },
-        "/users/change-password": {
+        "/api/users/change-password": {
             "put": {
                 "tags": [
                     "User Management"
                 ],
                 "summary": "Change user password",
                 "description": "Change the password of the authenticated user.",
-                "operationId": "c379d1adb7a40846c8df71fe0ae1ec44",
+                "operationId": "dda9906122be2f6631b6d236c620eebe",
                 "requestBody": {
                     "required": true,
                     "content": {
