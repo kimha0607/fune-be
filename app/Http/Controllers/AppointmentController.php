@@ -47,7 +47,7 @@ class AppointmentController extends Controller
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
-     *         name="clinic_name",
+     *         name="clinic_id",
      *         in="query",
      *         description="Filter by clinic name",
      *         required=false,
@@ -186,53 +186,8 @@ class AppointmentController extends Controller
      }
  
 
+
     /**
-     * @OA\Post(
-     *     path="/api/appointments",
-     *     tags={"Appointments"},
-     *     summary="Create a new appointment",
-     *     description="Schedule a new appointment for a patient with a doctor at a specific clinic.",
-     *     security={{"bearerAuth": {}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             type="object",
-     *             required={"clinic_id", "doctor_id", "appointment_time"},
-     *             @OA\Property(property="clinic_id", type="integer", description="ID of the clinic"),
-     *             @OA\Property(property="doctor_id", type="integer", description="ID of the doctor"),
-     *             @OA\Property(
-    *                      property="appointment_time", 
-    *                      type="string", 
-    *                      format="date-time", 
-    *                      description="Scheduled time for the appointment", 
-    *                      example="2025-1-11 08:45:26"
-    *                  )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Appointment created successfully",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="message", type="string", example="Appointment created successfully"),
-     *             @OA\Property(property="appointment", ref="#/components/schemas/Appointment")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="Bad request",
-     *         @OA\JsonContent(type="object", @OA\Property(property="error", type="string"))
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validation error",
-     *         @OA\JsonContent(type="object", @OA\Property(property="errors", type="object"))
-     *     )
-     * )
-     */
-
-
-       /**
      * @OA\Get(
      *     path="/api/appointments/doctor/{doctor_id}",
      *     tags={"Appointments"},
@@ -306,6 +261,51 @@ class AppointmentController extends Controller
 
         return response()->json(['data' => $appointments], 200);
     }
+
+     /**
+     * @OA\Post(
+     *     path="/api/appointments",
+     *     tags={"Appointments"},
+     *     summary="Create a new appointment",
+     *     description="Schedule a new appointment for a patient with a doctor at a specific clinic.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"clinic_id", "doctor_id", "appointment_time"},
+     *             @OA\Property(property="clinic_id", type="integer", description="ID of the clinic"),
+     *             @OA\Property(property="doctor_id", type="integer", description="ID of the doctor"),
+     *             @OA\Property(
+    *                      property="appointment_time", 
+    *                      type="string", 
+    *                      format="date-time", 
+    *                      description="Scheduled time for the appointment", 
+    *                      example="2025-1-11 08:45:26"
+    *                  )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Appointment created successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Appointment created successfully"),
+     *             @OA\Property(property="appointment", ref="#/components/schemas/Appointment")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request",
+     *         @OA\JsonContent(type="object", @OA\Property(property="error", type="string"))
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(type="object", @OA\Property(property="errors", type="object"))
+     *     )
+     * )
+     */
 
     public function store(Request $request)
     {   

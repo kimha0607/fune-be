@@ -34,7 +34,7 @@
                         }
                     },
                     {
-                        "name": "clinic_name",
+                        "name": "clinic_id",
                         "in": "query",
                         "description": "Filter by clinic name",
                         "required": false,
@@ -128,6 +128,101 @@
                     },
                     "401": {
                         "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Appointments"
+                ],
+                "summary": "Create a new appointment",
+                "description": "Schedule a new appointment for a patient with a doctor at a specific clinic.",
+                "operationId": "15017f04a457b26e2a870c8a011a407a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "clinic_id",
+                                    "doctor_id",
+                                    "appointment_time"
+                                ],
+                                "properties": {
+                                    "clinic_id": {
+                                        "description": "ID of the clinic",
+                                        "type": "integer"
+                                    },
+                                    "doctor_id": {
+                                        "description": "ID of the doctor",
+                                        "type": "integer"
+                                    },
+                                    "appointment_time": {
+                                        "description": "Scheduled time for the appointment",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2025-1-11 08:45:26"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Appointment created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Appointment created successfully"
+                                        },
+                                        "appointment": {
+                                            "$ref": "#/components/schemas/Appointment"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -447,7 +542,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successful response",
+                        "description": "Children retrieved successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -594,6 +689,36 @@
                 ]
             }
         },
+        "/users/info": {
+            "get": {
+                "tags": [
+                    "User Management"
+                ],
+                "summary": "Retrieve user info based on token",
+                "description": "Returns the authenticated user's information.",
+                "operationId": "a8430c2764d56800191eedd4dff08197",
+                "responses": {
+                    "200": {
+                        "description": "User info retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/users/{id}": {
             "get": {
                 "tags": [
@@ -707,6 +832,60 @@
                     },
                     "404": {
                         "description": "User not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/users/change-password": {
+            "put": {
+                "tags": [
+                    "User Management"
+                ],
+                "summary": "Change user password",
+                "description": "Change the password of the authenticated user.",
+                "operationId": "c379d1adb7a40846c8df71fe0ae1ec44",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "current_password": {
+                                        "type": "string"
+                                    },
+                                    "new_password": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password changed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Password changed successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input or incorrect current password"
                     }
                 },
                 "security": [

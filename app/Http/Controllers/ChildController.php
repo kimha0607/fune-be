@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
 use App\Models\Child;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ use Illuminate\Support\Facades\Validator;
  */
 class ChildController extends Controller
 {
-    /**
+        /**
      * @OA\Get(
      *     path="/api/children/{userId}",
      *     tags={"Children Management"},
@@ -36,7 +37,7 @@ class ChildController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Successful response",
+     *         description="Children retrieved successfully",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="children", type="array", @OA\Items(ref="#/components/schemas/Child"))
@@ -57,15 +58,15 @@ class ChildController extends Controller
         $user = User::find($userId);
 
         if (!$user) {
-            return response()->json(['error' => 'User not found'], 410);
+            return ResponseHelper::error('User not found', [], 410);
         }
 
         $children = $user->children;
 
-        return response()->json(['children' => $children], 200);
+        return ResponseHelper::success($children, 'Children retrieved successfully');
     }
 
-    /**
+        /**
      * @OA\Post(
      *     path="/api/children",
      *     tags={"Children Management"},
@@ -97,17 +98,21 @@ class ChildController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            $errors = collect($validator->errors())->map(function ($messages, $field) {
+                return array_map(function ($message) use ($field) {
+                    return [
+                        "code" => "E001",
+                        "field" => $field,
+                        "message" => $message
+                    ];
+                }, $messages);
+            })->flatten(1);
+
+            return ResponseHelper::error('Validation failed', $errors, 422);
         }
 
-        // Create a new child record
-        $child = Child::create([
-            'user_id' => $request->user_id,
-            'name' => $request->name,
-            'dob' => $request->dob,
-            'gender' => $request->gender,
-        ]);
+        $child = Child::create($request->all());
 
-        return response()->json(['message' => 'Child added successfully', 'child' => $child], 201);
+        return ResponseHelper::success($child, 'Child created successfully', 201);
     }
 }
