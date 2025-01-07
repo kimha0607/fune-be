@@ -303,52 +303,53 @@ class AppointmentController extends Controller
      * )
      */
 
-     public function store(Request $request)
-     {
-         $validator = Validator::make($request->all(), [
-             'patient_id' => 'required|exists:users,id',
-             'doctor_id' => 'required|exists:users,id',
-             'clinic_id' => 'required|exists:clinics,id',
-             'dental_issue' => 'required|string',
-             'appointment_time' => 'required|date|after:now',
-         ]);
 
-         if ($validator->fails()) {
-            $errors = [];
-    
-            foreach ($validator->errors()->toArray() as $field => $messages) {
-                foreach ($messages as $message) {
-                    if ($field == 'appointment_time' && $message == 'The appointment time must be a date after now.') {
-                        $errors[] = [
-                            'code' => 'E003',
-                            'field' => 'appointment_time',
-                        ];
-                    } else {
-                        $errors[] = [
-                            'code' => 'E999',
-                            'message' => $message,
-                            'field' => $field,
-                        ];
-                    }
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'patient_id' => 'required|exists:users,id',
+            'doctor_id' => 'required|exists:users,id',
+            'clinic_id' => 'required|exists:clinics,id',
+            'dental_issue' => 'required|string',
+            'appointment_time' => 'required|date|after:now',
+        ]);
+
+        if ($validator->fails()) {
+        $errors = [];
+
+        foreach ($validator->errors()->toArray() as $field => $messages) {
+            foreach ($messages as $message) {
+                if ($field == 'appointment_time' && $message == 'The appointment time must be a date after now.') {
+                    $errors[] = [
+                        'code' => 'E003',
+                        'field' => 'appointment_time',
+                    ];
+                } else {
+                    $errors[] = [
+                        'code' => 'E999',
+                        'message' => $message,
+                        'field' => $field,
+                    ];
                 }
             }
-    
-            return ResponseHelper::error('Validation error', $errors, 422);
         }
-     
-         // Create a new appointment
-         $appointment = Appointment::create([
-             'patient_id' => $request->patient_id,
-             'doctor_id' => $request->doctor_id,
-             'dental_issue' => $request->dental_issue,
-             'clinic_id' => $request->clinic_id,
-             'appointment_time' => $request->appointment_time,
-             'status' => 'pending',
-         ]);
-     
-         return ResponseHelper::success([
-             'message' => 'Appointment created successfully',
-             'appointment' => $appointment,
-         ], 'Appointment created successfully', 201);
-     }
+
+        return ResponseHelper::error('Validation error', $errors, 422);
+    }
+    
+        // Create a new appointment
+        $appointment = Appointment::create([
+            'patient_id' => $request->patient_id,
+            'doctor_id' => $request->doctor_id,
+            'dental_issue' => $request->dental_issue,
+            'clinic_id' => $request->clinic_id,
+            'appointment_time' => $request->appointment_time,
+            'status' => 'pending',
+        ]);
+    
+        return ResponseHelper::success([
+            'message' => 'Appointment created successfully',
+            'appointment' => $appointment,
+        ], 'Appointment created successfully', 201);
+    }
 }

@@ -7,6 +7,8 @@ use App\Helpers\ResponseHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Tymon\JWTAuth\Facades\JWTAuth;
+
 
 /**
  * @OA\Schema(
@@ -50,6 +52,10 @@ class UserController extends Controller
 {
     $query = User::query();
 
+    if ($request->has('id')) {
+        $query->where('id', $request->id);
+    }
+
     if ($request->has('email')) {
         $query->where('email', 'like', '%' . $request->email . '%');
     }
@@ -68,6 +74,17 @@ class UserController extends Controller
 
     if ($request->has('active')) {
         $query->where('active', filter_var($request->active, FILTER_VALIDATE_BOOLEAN));
+    }
+
+    if ($request->has('sort_by')) {
+        $sortBy = $request->input('sort_by');
+        $order = $request->input('order', 'asc');
+
+        // Kiểm tra cột hợp lệ
+        $validColumns = ['id', 'name', 'email', 'role_id', 'active'];
+        if (in_array($sortBy, $validColumns)) {
+            $query->orderBy($sortBy, $order);
+        }
     }
 
     try {
@@ -184,27 +201,52 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:15',
             'address' => 'nullable|string',
-            'role_id' => 'required|number',
+            'role_id' => 'required|integer',
             'password' => 'required|string|min:6',
             'active' => 'required|boolean',
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            $errors = [];
+    
+            foreach ($validator->errors()->toArray() as $field => $messages) {
+                foreach ($messages as $message) {
+                    $errors[] = [
+                        'code' => 'E999',
+                        'message' => $message,
+                        'field' => $field,
+                    ];
+                }
+            }
+    
+            return ResponseHelper::error('Validation error', $errors, 422);
         }
 
-        $user = User::create([
-            'email' => $request->email,
-            'name' => $request->name,
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'role_id' => $request->role_id,
-            'password' => Hash::make($request->password),
-            'active' => $request->active,
-        ]);
+        try {
+            $user = User::create([
+                'email' => $request->email,
+                'name' => $request->name,
+                'phone' => $request->phone,
+                'address' => $request->address,
+                'role_id' => $request->role_id,
+                'password' => Hash::make($request->password),
+                'active' => $request->active,
+            ]);
 
-        return response()->json(['message' => 'User created successfully', 'user' => $user], 201);
+            return ResponseHelper::success(
+                $user,
+                'User created successfully',
+                201
+            );
+        } catch (\Exception $e) {
+            return ResponseHelper::error(
+                'Failed to create user',
+                ['exception' => $e->getMessage()],
+                500
+            );
+        }
     }
+
 
     /**
     * @OA\Put(
@@ -353,16 +395,63 @@ class UserController extends Controller
     *     )
     * )
     */
-    public function destroy($id)
+    public function destroy(Request $request)
     {
-        $user = User::find($id);
-
-        if (!$user) {
-            return response()->json(['error' => 'User not found'], 404);
+        $ids = $request->input('ids');
+    
+        if (empty($ids) || !is_array($ids)) {
+            return ResponseHelper::customError('Invalid input', [
+                'ids' => ['E999'],
+            ], 422);
         }
+    
+        $users = User::whereIn('id', $ids)->get();
+    
+        if ($users->isEmpty() || empty($ids) || !is_array($ids)) {
+            return ResponseHelper::customError('Users not found', [
+                'user' => ['E004'],
+            ], 422);
+        }
+    
+        try {
+            User::whereIn('id', $ids)->delete();
+    
+            return ResponseHelper::success(
+                ['deleted_ids' => $ids],
+                'Users deleted successfully'
+            );
+        } catch (\Exception $e) {
+            return ResponseHelper::error(
+                'Failed to delete users',
+                ['exception' => $e->getMessage()],
+                500
+            );
+        }
+    }
 
-        $user->delete();
 
-        return response()->json(['message' => 'User deleted successfully']);
+    public function checkRole(Request $request)
+    {
+        try {
+            $user = JWTAuth::parseToken()->authenticate();
+
+            if (!$user) {
+                return ResponseHelper::customError('Unauthorized', [
+                    'user' => ['E004'],
+                ], 422);
+            }
+
+            $role = $user->role;
+
+            return ResponseHelper::success([
+                'role_id' => $user->role_id
+            ], 'Role fetched successfully', 200);
+        } catch (JWTException $e) {
+            return ResponseHelper::customError('Token error', [
+                'code' => 'E003',
+                'message' => $e->getMessage()
+            ], 401);
+        }
     }
 }
+
