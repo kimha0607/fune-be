@@ -156,15 +156,18 @@
                                 "properties": {
                                     "patient_id": {
                                         "description": "ID of the patient",
-                                        "type": "integer"
+                                        "type": "integer",
+                                        "example": 1
                                     },
                                     "doctor_id": {
                                         "description": "ID of the doctor",
-                                        "type": "integer"
+                                        "type": "integer",
+                                        "example": 2
                                     },
                                     "clinic_id": {
                                         "description": "ID of the clinic",
-                                        "type": "integer"
+                                        "type": "integer",
+                                        "example": 1
                                     },
                                     "dental_issue": {
                                         "description": "Dental issue of the appointment",
@@ -368,6 +371,106 @@
                     },
                     "404": {
                         "description": "Doctor not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/appointments/{id}/status": {
+            "patch": {
+                "tags": [
+                    "Appointments"
+                ],
+                "summary": "Approve or reject an appointment",
+                "description": "Update the status of an appointment to 'confirmed' or 'cancelled'.",
+                "operationId": "7ca94714fcf80bb5e27686bff2c8dbe5",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the appointment",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "description": "New status of the appointment",
+                                        "type": "string",
+                                        "enum": [
+                                            "approved",
+                                            "rejected"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Appointment status updated successfully"
+                                        },
+                                        "appointment": {
+                                            "$ref": "#/components/schemas/Appointment"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Appointment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid status value",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [

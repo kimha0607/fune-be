@@ -32,9 +32,11 @@ Route::middleware('auth:api')->group(function () {
 // Appointments
 Route::middleware('auth:api')->group(function () {
     Route::get('/appointments', [AppointmentController::class, 'index']);
+    Route::get('/appointments/statistics', [AppointmentController::class, 'statistics']);
     Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
     Route::get('/appointments/doctor/{doctor_id}', [AppointmentController::class, 'getAppointmentsByDoctor']);
     Route::post('/appointments', [AppointmentController::class, 'store']);
+    Route::patch('/appointments/{id}/status', [AppointmentController::class, 'updateStatus']);
 });
 
 // Children

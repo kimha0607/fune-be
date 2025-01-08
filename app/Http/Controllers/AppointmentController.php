@@ -9,6 +9,7 @@ use App\Models\Appointment;
 use App\Models\Clinic;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 /**
  * @OA\Schema(
@@ -19,7 +20,7 @@ use Illuminate\Support\Facades\Validator;
  *     @OA\Property(property="doctor_id", type="integer", description="Doctor ID"),
  *     @OA\Property(property="clinic_id", type="integer", description="Clinic ID"),
  *     @OA\Property(property="appointment_time", type="string", format="date-time", description="Appointment time"),
- *     @OA\Property(property="status", type="string", enum={"pending", "completed", "cancelled"}, description="Appointment status")
+ *     @OA\Property(property="status", type="string", enum={"pending", "confirmed", "cancelled"}, description="Appointment status")
  * )
  */
 
@@ -108,43 +109,56 @@ class AppointmentController extends Controller
      public function index(Request $request)
      {
          $query = Appointment::query();
-     
+ 
          $query->with([
              'patient.children',
              'doctor',
              'clinic'
          ]);
-     
+ 
          if ($request->filled('patient_id')) {
              $query->where('patient_id', $request->patient_id);
          }
-     
+ 
          if ($request->filled('doctor_id')) {
              $query->where('doctor_id', $request->doctor_id);
          }
-     
+ 
          if ($request->filled('clinic_id')) {
              $query->where('clinic_id', $request->clinic_id);
          }
-     
+ 
          if ($request->filled('status')) {
              $query->where('status', $request->status);
          }
-     
+ 
          if ($request->filled('start_time') && $request->filled('end_time')) {
              $query->whereBetween('appointment_time', [$request->start_time, $request->end_time]);
          }
-     
-         if ($request->filled('sort_by') && $request->filled('sort_order')) {
-             $query->orderBy($request->sort_by, $request->sort_order);
+ 
+         if ($request->filled('created_start_date') && $request->filled('created_end_date')) {
+             $query->whereBetween('created_at', [
+                 Carbon::parse($request->created_start_date)->startOfDay(),
+                 Carbon::parse($request->created_end_date)->endOfDay()
+             ]);
+         } elseif ($request->filled('created_start_date')) {
+             $query->whereDate('created_at', '>=', $request->created_start_date);
+         } elseif ($request->filled('created_end_date')) {
+             $query->whereDate('created_at', '<=', $request->created_end_date);
+         }
+ 
+         if ($request->filled('sort_by') && $request->filled('order')) {
+             $query->orderBy($request->sort_by, $request->order);
          } else {
              $query->orderBy('appointment_time', 'asc');
          }
-     
-         $appointments = $query->paginate(10);
-     
+ 
+         // Lấy giá trị `per_page` từ request hoặc mặc định là 10
+         $perPage = $request->input('per_page', 10);
+         $appointments = $query->paginate($perPage);
+ 
          return ResponseHelper::success($appointments, 'Appointments retrieved successfully');
-    }
+     }
 
     /**
      * @OA\Get(
@@ -352,4 +366,102 @@ class AppointmentController extends Controller
             'appointment' => $appointment,
         ], 'Appointment created successfully', 201);
     }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/appointments/{id}/status",
+     *     tags={"Appointments"},
+     *     summary="Approve or reject an appointment",
+     *     description="Update the status of an appointment to 'confirmed' or 'cancelled'.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID of the appointment",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"status"},
+     *             @OA\Property(
+     *                 property="status",
+     *                 type="string",
+     *                 enum={"approved", "rejected"},
+     *                 description="New status of the appointment"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Status updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Appointment status updated successfully"),
+     *             @OA\Property(property="appointment", ref="#/components/schemas/Appointment")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Appointment not found",
+     *         @OA\JsonContent(type="object", @OA\Property(property="error", type="string"))
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Invalid status value",
+     *         @OA\JsonContent(type="object", @OA\Property(property="error", type="string"))
+     *     )
+     * )
+     */
+    public function updateStatus($id, Request $request)
+    {
+        // Validate the status input
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|string|in:confirmed,cancelled',
+        ]);
+
+        if ($validator->fails()) {
+            return ResponseHelper::error('Invalid status value', $validator->errors(), 422);
+        }
+
+        // Find the appointment by ID
+        $appointment = Appointment::find($id);
+
+        if (!$appointment) {
+            return ResponseHelper::error('Appointment not found', [], 404);
+        }
+
+        // Update the status
+        $appointment->status = $request->status;
+        $appointment->save();
+
+        return ResponseHelper::success([
+            'message' => 'Appointment status updated successfully',
+            'appointment' => $appointment
+        ]);
+    }
+
+
+    public function statistics(Request $request)
+    {
+        $year = $request->get('year', now()->year);
+    
+        $appointments = Appointment::whereYear('appointment_time', $year)
+            ->get()
+            ->groupBy(function ($appointment) {
+                return Carbon::parse($appointment->appointment_time)->month;
+            });
+    
+        $fullStatistics = collect(range(1, 12))->map(function ($month) use ($appointments) {
+            return [
+                'month' => $month,
+                'totalAppointments' => $appointments->has($month) ? $appointments->get($month)->count() : 0,
+            ];
+        });
+    
+        return ResponseHelper::success($fullStatistics, 'Statistics retrieved successfully');
+    }
+
 }
