@@ -20,7 +20,7 @@ services:
     container_name: fune-db
 
   app:
-    image: hakim060701/fune-be:v1.5
+    image: hakim060701/fune-be:v1.6
     container_name: fune-be
     restart: unless-stopped
     volumes:
