@@ -364,7 +364,7 @@ class AppointmentController extends Controller
         if ($hasConflict) {
             return ResponseHelper::error('The doctor already has an appointment within 2 hours.', [
                 [
-                    'code' => 'E004',
+                    'code' => 'E005',
                     'field' => 'doctor_id',
                 ]
             ], 422);
