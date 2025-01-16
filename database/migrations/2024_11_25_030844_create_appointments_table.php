@@ -19,7 +19,7 @@ class CreateAppointmentsTable extends Migration
             $table->foreignId('doctor_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('clinic_id')->constrained('clinics')->onDelete('cascade');
             $table->dateTime('appointment_time');
-            $table->enum('dental_issue', ['caries'])->default('caries');
+            $table->enum('dental_issue', ['caries', 'wisdom_tooth', 'tartar', 'teeth_whitening', 'orthodontics', 'extraction', 'checkup'])->default('caries');
             $table->enum('status', ['pending', 'confirmed', 'cancelled'])->default('pending');
             $table->timestamps();
         });

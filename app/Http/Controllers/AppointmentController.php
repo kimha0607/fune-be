@@ -327,45 +327,60 @@ class AppointmentController extends Controller
             'dental_issue' => 'required|string',
             'appointment_time' => 'required|date|after:now',
         ]);
-
+    
         if ($validator->fails()) {
-        $errors = [];
-
-        foreach ($validator->errors()->toArray() as $field => $messages) {
-            foreach ($messages as $message) {
-                if ($field == 'appointment_time' && $message == 'The appointment time must be a date after now.') {
-                    $errors[] = [
-                        'code' => 'E003',
-                        'field' => 'appointment_time',
-                    ];
-                } else {
-                    $errors[] = [
-                        'code' => 'E999',
-                        'message' => $message,
-                        'field' => $field,
-                    ];
+            $errors = [];
+    
+            foreach ($validator->errors()->toArray() as $field => $messages) {
+                foreach ($messages as $message) {
+                    if ($field == 'appointment_time' && $message == 'The appointment time must be a date after now.') {
+                        $errors[] = [
+                            'code' => 'E003',
+                            'field' => 'appointment_time',
+                        ];
+                    } else {
+                        $errors[] = [
+                            'code' => 'E999',
+                            'message' => $message,
+                            'field' => $field,
+                        ];
+                    }
                 }
             }
-        }
-
-        return ResponseHelper::error('Validation error', $errors, 422);
-    }
     
-        // Create a new appointment
+            return ResponseHelper::error('Validation error', $errors, 422);
+        }
+    
+        $doctorId = $request->input('doctor_id');
+        $appointmentTime = new \DateTime($request->input('appointment_time'));
+    
+        $hasConflict = Appointment::where('doctor_id', $doctorId)
+            ->whereBetween('appointment_time', [
+                $appointmentTime->modify('-2 hours')->format('Y-m-d H:i:s'),
+                $appointmentTime->modify('+2 hours')->format('Y-m-d H:i:s'),
+            ])
+            ->exists();
+    
+        if ($hasConflict) {
+            return ResponseHelper::error('The doctor already has an appointment within 2 hours.', [
+                [
+                    'code' => 'E004',
+                    'field' => 'doctor_id',
+                ]
+            ], 422);
+        }
+    
         $appointment = Appointment::create([
-            'patient_id' => $request->patient_id,
-            'doctor_id' => $request->doctor_id,
-            'dental_issue' => $request->dental_issue,
-            'clinic_id' => $request->clinic_id,
-            'appointment_time' => $request->appointment_time,
-            'status' => 'pending',
+            'patient_id' => $request->input('patient_id'),
+            'doctor_id' => $request->input('doctor_id'),
+            'clinic_id' => $request->input('clinic_id'),
+            'dental_issue' => $request->input('dental_issue'),
+            'appointment_time' => $request->input('appointment_time'),
         ]);
     
-        return ResponseHelper::success([
-            'message' => 'Appointment created successfully',
-            'appointment' => $appointment,
-        ], 'Appointment created successfully', 201);
+        return ResponseHelper::success('Appointment created successfully.', $appointment);
     }
+     
 
     /**
      * @OA\Patch(
